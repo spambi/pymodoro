@@ -1,101 +1,58 @@
-import time
 import threading
-import queue
-from win10toast import ToastNotifier
+import time
+import wx
 
 
-toaster = ToastNotifier()
+class GUI(wx.Frame):
+    def __init__(self, parent, title):
+        super(GUI, self).__init__(parent, title=title,
+                                  size=(350, 250))
+        self.Center()
+        self.InitUI()
 
-# append sleep to queue
-# make it thread
-# go on with life
+    def InitUI(self):
+        # Layout config
+        self.mainPanel = wx.Panel(self)
+        self.mainPanel.SetBackgroundColour("blue")
+        self.mainBox = wx.BoxSizer(wx.HORIZONTAL)
 
+        # Work But
+        self.workButton = wx.Button(self.mainPanel,
+                                    label="Work", size=(70, 30))
+        self.workButton.Bind(wx.EVT_BUTTON, lambda EVT: timeThreader(15))
 
-class Pymodoro():
-    mainThread = None
-    mainQueue = None
-    printLock = None
+        self.restButton = wx.Button(self.mainPanel,
+                                    label="Rest", size=(70, 30))
+        self.restButton.Bind(wx.EVT_BUTTON, lambda EVT: timeThreader(5))
 
-    def __init__(self, time: float, interval: float, state: str):
-        # Set up threading
-        # self.mainThread = threading.Thread(target=self.handleThreads)
-        # self.mainThread.daemon = True
-        # Init mainQueue
-        self.printLock = threading.Lock()
-        self.mainQueue = queue.Queue()
-        # timerLock = threading.Lock()
-        #test = input("Please Input You're State: ")
-        #self.pomodoroSwitch(state)
+        self.mainBox.Add(self.workButton)
+        self.mainBox.Add(self.restButton)
 
-    # def threader(self, *vars):
-    #     """Runs main thread of class"""
-    #     while True:
-    #         vars()
-    #         self.mainQueue.task_done()
-
-    # def handleThreads(self, *vars):
-    #     # for x in range(1):
-    #     t = threading.Thread(target=vars)
-    #     t.daemon = True
-    #     t.start()
-
-    #     for worker in range(20):
-    #         self.mainQueue.put(worker)
-    #     self.mainQueue.join()
-
-    def pomodoroSwitch(self, lol: str) -> str:
-        timeSwitch = {
-            "0":     self.pomodoroStart(25),
-            "1":     self.pomodoroRest(5),
-            "2":     self.pomodoroStop(0),
-            "Start": self.pomodoroStart(25),
-            "Rest":  self.pomodoroRest(5),
-            "Stop":  self.pomodoroStop(0)
-        }
-        # state = timeSwitch.get(lol, lambda: "[-] Invalid int %s" % timeSwitch)
-        return timeSwitch.get(lol, lambda: "[-] Invalid int %s" % timeSwitch)
-        # if state not in timeSwitch:
-        #     return False
-
-        # self.handleThreads(state)
-        # time.sleep(5)
-        # if self.mainThreads.isAlive():
-        #     print('hihi')
-
-    def pomodoroStart(self, time: float):
-        toaster.show_toast("Timer Start",
-                           "Timer has started for: {} minutes!".format(time),
-                           duration=3,
-                           threaded=True)
-        print("[+] Started timer")
-
-    def pomodoroRest(self, time: float):
-        print("[+] Started rest")
-        toaster.show_toast("Rest time!",
-                           "Resting for {} minutes!".format(time),
-                           duration=3)
-        self.basicTimer(time, 1.0)
-
-    def pomodoroStop(self, time: float):
-        print("[+] Stopped timer")
-        toaster.show_toast("Timer Stopped!",
-                           "",
-                           duration=3)
-        self.basicTimer(time, 1.0)
-
-    def basicTimer(self, loltime: float, interval: float) -> bool:
-        print('HERE')
-        while loltime:
-            with self.printLock:
-                print(int(loltime))
-                loltime -= interval
-                time.sleep(interval)
-        toaster.show_toast("Timer is finished",
-                           "you are a terrible person",
-                           duration=3)
-        return True
+        self.mainPanel.SetSizer(self.mainBox)
 
 
-# DEV
-basic = Pymodoro(10, 10, lambda: int(input("Put in state: ")))
-basic.pomodoroSwitch(int(input('Start: 0, Rest: 1, Stop: 2 ')))
+def baseTimer(counter: int) -> bool:
+    """Basic Timer Seperate of GUI."""
+    i = None
+    i = counter
+    while i:
+        print("Countdown: {}".format(i))
+        time.sleep(1)
+        i -= 1
+    print("Countdown finished")
+    return True
+
+
+def timeThreader(counter: int) -> bool:
+    """Calls baseTimer with specified time."""
+    t = threading.Thread(target=baseTimer, args=(counter,), daemon=True)
+    try:
+        t.start()
+    except BaseException as err:
+        raise(err)
+
+
+app = wx.App()
+ex = GUI(None, title="AHAHA")
+ex.Show()
+app.MainLoop()
