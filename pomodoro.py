@@ -8,8 +8,25 @@ class LogWindow(wx.Dialog):
     """A basic dialog for logging out current processes and info
 
     """
-    def __init__(self, parent):
-        pass
+    def __init__(self, parent, title):
+        super(LogWindow, self).__init__(parent, title=title)
+        self.InitUI()
+
+    def InitUI(self):
+        """Init's UI for LogWindow Class"""
+        panel = wx.Panel(self)
+        # self.btn = wx.Button(self.panel, wx.ID_OK,
+        #                      label="ok", size=(50, 20), pos=(75, 50))
+        hbox = wx.BoxSizer(wx.HORIZONTAL)
+
+        self.logInfo = wx.TextCtrl(panel,
+                                   style=wx.TE_READONLY |
+                                   wx.HSCROLL |
+                                   wx.TE_MULTILINE)
+
+        hbox.Add(self.logInfo, proportion=1, flag=wx.EXPAND)
+
+        panel.SetSizer(hbox)
 
 
 class GUI(wx.Frame):
@@ -19,28 +36,52 @@ class GUI(wx.Frame):
     def __init__(self, parent, title):
         super(GUI, self).__init__(parent, title=title,
                                   size=(350, 250))
+        self.currState = False
         self.Center()
         self.InitUI()
 
     def InitUI(self):
+        """Init's UI for GUI Class"""
         # Layout config
         self.mainPanel = wx.Panel(self)
         self.mainPanel.SetBackgroundColour("#d8bfd8")
         self.mainBox = wx.BoxSizer(wx.HORIZONTAL)
 
         # Work But
-        self.workButton = wx.Button(self.mainPanel,
-                                    label="Work", size=(70, 30))
-        self.workButton.Bind(wx.EVT_BUTTON, lambda EVT: work())
+        workButton = wx.Button(self.mainPanel,
+                               label="Work", size=(70, 30))
+        workButton.Bind(wx.EVT_BUTTON, lambda EVT: self.work())
 
-        self.restButton = wx.Button(self.mainPanel,
-                                    label="Rest", size=(70, 30))
-        self.restButton.Bind(wx.EVT_BUTTON, lambda EVT: rest())
+        # Rest But
+        restButton = wx.Button(self.mainPanel,
+                               label="Rest", size=(70, 30))
+        restButton.Bind(wx.EVT_BUTTON, lambda EVT: self.rest())
 
-        self.mainBox.Add(self.workButton)
-        self.mainBox.Add(self.restButton)
+        # Log Spawn
+        logBut = wx.Button(self.mainPanel,
+                           label="Log", size=(70, 30))
+        logBut.Bind(wx.EVT_BUTTON, lambda EVT: self.initLog())
+
+        self.mainBox.Add(workButton)
+        self.mainBox.Add(restButton)
+        self.mainBox.Add(logBut)
 
         self.mainPanel.SetSizer(self.mainBox)
+
+    def initLog(self):
+        """Will initialize the info dialog."""
+        log = LogWindow(self, "Log Window")
+        log.Show()
+
+    def initCustom(self):
+        """Will initialize the custom menu."""
+        pass
+
+    def rest(self):
+        timeThreader(5)
+
+    def work(self):
+        timeThreader(15)
 
 
 def baseTimer(counter: int) -> bool:
@@ -57,6 +98,7 @@ def baseTimer(counter: int) -> bool:
         print("Countdown: {}".format(i))
         time.sleep(1)
         i -= 1
+
     print("Countdown finished")
 
     toast.show_toast("Basic Timer",
@@ -76,12 +118,6 @@ def timeThreader(counter: int) -> bool:
         raise(err)
 
 
-def rest():
-    timeThreader(5)
-
-
-def work():
-    timeThreader(15)
 
 
 app = wx.App()
