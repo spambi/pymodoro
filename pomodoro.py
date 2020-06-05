@@ -79,13 +79,10 @@ class GUI(wx.Frame):
 
     def initLog(self):
         """Will initialize the info dialog."""
-        if not self.logClass:
-            self.logClass = LogWindow(self, "Log Window")
-            self.logClass.Show()
-        elif self.logClass:
+        if self.logClass:
             self.logClass.Show()
         else:
-            return False
+            self.logClass = LogWindow(self, "Log Window")
 
     def initCustom(self):
         """Will initialize the custom menu."""
