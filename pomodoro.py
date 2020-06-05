@@ -15,8 +15,6 @@ class LogWindow(wx.Dialog):
     def InitUI(self):
         """Init's UI for LogWindow Class"""
         panel = wx.Panel(self)
-        # self.btn = wx.Button(self.panel, wx.ID_OK,
-        #                      label="ok", size=(50, 20), pos=(75, 50))
         hbox = wx.BoxSizer(wx.HORIZONTAL)
 
         self.logInfo = wx.TextCtrl(panel,
@@ -28,6 +26,9 @@ class LogWindow(wx.Dialog):
 
         panel.SetSizer(hbox)
 
+    def log(self, info: str):
+        self.logInfo.AppendText(info)
+
 
 class GUI(wx.Frame):
     """ Basic GUI to run different pomodoro settings
@@ -36,12 +37,14 @@ class GUI(wx.Frame):
     def __init__(self, parent, title):
         super(GUI, self).__init__(parent, title=title,
                                   size=(350, 250))
-        self.currState = False
+        self.logClass = None
+
         self.Center()
         self.InitUI()
 
     def InitUI(self):
         """Init's UI for GUI Class"""
+
         # Layout config
         self.mainPanel = wx.Panel(self)
         self.mainPanel.SetBackgroundColour("#d8bfd8")
@@ -62,29 +65,47 @@ class GUI(wx.Frame):
                            label="Log", size=(70, 30))
         logBut.Bind(wx.EVT_BUTTON, lambda EVT: self.initLog())
 
+        logTest = wx.Button(self.mainPanel,
+                            label="Log Test!", size=(70, 30))
+        logTest.Bind(wx.EVT_BUTTON,
+                     lambda EVT: self.logClass.log("This is a test!"))
+
         self.mainBox.Add(workButton)
         self.mainBox.Add(restButton)
         self.mainBox.Add(logBut)
+        self.mainBox.Add(logTest)
 
         self.mainPanel.SetSizer(self.mainBox)
 
     def initLog(self):
         """Will initialize the info dialog."""
-        log = LogWindow(self, "Log Window")
-        log.Show()
+        if not self.logClass:
+            self.logClass = LogWindow(self, "Log Window")
+            self.logClass.Show()
+        elif self.logClass:
+            self.logClass.Show()
+        else:
+            return False
 
     def initCustom(self):
         """Will initialize the custom menu."""
         pass
 
     def rest(self):
-        timeThreader(5)
+        timeThreader(5, self.logClass)
 
     def work(self):
-        timeThreader(15)
+        timeThreader(15, self.logClass)
+
+    def selfLog(self, string: str) -> bool:
+        if self.logClass:
+            self.logClass.logInfo.AppendText(string)
+            return True
+        else:
+            return False
 
 
-def baseTimer(counter: int) -> bool:
+def baseTimer(counter: int, logClass=None) -> bool:
     """Basic Timer Seperate of GUI."""
     toast = ToastNotifier()
     i = None
@@ -94,12 +115,18 @@ def baseTimer(counter: int) -> bool:
                      duration=4,
                      threaded=True)
 
-    while i:
-        print("Countdown: {}".format(i))
-        time.sleep(1)
-        i -= 1
-
-    print("Countdown finished")
+    if logClass:
+        while i:
+            logClass.log("[+] Countdown: {}\n".format(i))
+            time.sleep(1)
+            i -= 1
+        logClass.log("[+] Countdown finished\n")
+    elif not logClass:
+        while i:
+            print("Countdown: {}".format(i))
+            time.sleep(1)
+            i -= 1
+            print("Countdown finished")
 
     toast.show_toast("Basic Timer",
                      "Timer has ended!",
@@ -109,15 +136,14 @@ def baseTimer(counter: int) -> bool:
     return True
 
 
-def timeThreader(counter: int) -> bool:
+def timeThreader(counter: int, logClass=None) -> bool:
     """Calls baseTimer with specified time."""
-    t = threading.Thread(target=baseTimer, args=(counter,), daemon=True)
+    t = threading.Thread(target=baseTimer,
+                         args=(counter, logClass,), daemon=True)
     try:
         t.start()
     except BaseException as err:
         raise(err)
-
-
 
 
 app = wx.App()
