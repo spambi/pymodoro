@@ -51,6 +51,15 @@ class GUI(wx.Frame):
         self.mainBox = wx.BoxSizer(wx.VERTICAL)
         self.customBox = wx.BoxSizer(wx.VERTICAL)
 
+        # Menubar Config
+        menubar = wx.MenuBar()
+        logMenu = wx.Menu()
+        logItem = logMenu.Append(wx.ID_ANY, "Show Log",
+                                 "Show's the Logging Window")
+        menubar.Append(logMenu, "&Log")
+
+        self.Bind(wx.EVT_MENU, lambda EVT: self.initLog(), logItem)
+
         # Work But
         workButton = wx.Button(self.mainPanel,
                                label="Work", size=(100, 30))
@@ -84,6 +93,7 @@ class GUI(wx.Frame):
         self.mainBox.Add(self.customBox)
 
         self.mainPanel.SetSizer(self.mainBox)
+        self.SetMenuBar(menubar)
 
     def initLog(self):
         """Will initialize the info dialog."""
