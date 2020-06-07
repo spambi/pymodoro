@@ -1,101 +1,185 @@
-import time
 import threading
-import queue
+import time
+import wx
 from win10toast import ToastNotifier
 
 
-toaster = ToastNotifier()
+class LogWindow(wx.Dialog):
+    """A basic dialog for logging out current processes and info
 
-# append sleep to queue
-# make it thread
-# go on with life
+    """
+    def __init__(self, parent, title):
+        super(LogWindow, self).__init__(parent, title=title)
+        self.InitUI()
 
+    def InitUI(self):
+        """Init's UI for LogWindow Class"""
+        panel = wx.Panel(self)
+        hbox = wx.BoxSizer(wx.HORIZONTAL)
 
-class Pymodoro():
-    mainThread = None
-    mainQueue = None
-    printLock = None
+        self.logInfo = wx.TextCtrl(panel,
+                                   style=wx.TE_READONLY |
+                                   wx.TE_MULTILINE |
+                                   wx.HSCROLL)
 
-    def __init__(self, time: float, interval: float, state: str):
-        # Set up threading
-        # self.mainThread = threading.Thread(target=self.handleThreads)
-        # self.mainThread.daemon = True
-        # Init mainQueue
-        self.printLock = threading.Lock()
-        self.mainQueue = queue.Queue()
-        # timerLock = threading.Lock()
-        #test = input("Please Input You're State: ")
-        #self.pomodoroSwitch(state)
+        hbox.Add(self.logInfo, proportion=1, flag=wx.EXPAND)
 
-    # def threader(self, *vars):
-    #     """Runs main thread of class"""
-    #     while True:
-    #         vars()
-    #         self.mainQueue.task_done()
+        panel.SetSizer(hbox)
 
-    # def handleThreads(self, *vars):
-    #     # for x in range(1):
-    #     t = threading.Thread(target=vars)
-    #     t.daemon = True
-    #     t.start()
-
-    #     for worker in range(20):
-    #         self.mainQueue.put(worker)
-    #     self.mainQueue.join()
-
-    def pomodoroSwitch(self, lol: str) -> str:
-        timeSwitch = {
-            "0":     self.pomodoroStart(25),
-            "1":     self.pomodoroRest(5),
-            "2":     self.pomodoroStop(0),
-            "Start": self.pomodoroStart(25),
-            "Rest":  self.pomodoroRest(5),
-            "Stop":  self.pomodoroStop(0)
-        }
-        # state = timeSwitch.get(lol, lambda: "[-] Invalid int %s" % timeSwitch)
-        return timeSwitch.get(lol, lambda: "[-] Invalid int %s" % timeSwitch)
-        # if state not in timeSwitch:
-        #     return False
-
-        # self.handleThreads(state)
-        # time.sleep(5)
-        # if self.mainThreads.isAlive():
-        #     print('hihi')
-
-    def pomodoroStart(self, time: float):
-        toaster.show_toast("Timer Start",
-                           "Timer has started for: {} minutes!".format(time),
-                           duration=3,
-                           threaded=True)
-        print("[+] Started timer")
-
-    def pomodoroRest(self, time: float):
-        print("[+] Started rest")
-        toaster.show_toast("Rest time!",
-                           "Resting for {} minutes!".format(time),
-                           duration=3)
-        self.basicTimer(time, 1.0)
-
-    def pomodoroStop(self, time: float):
-        print("[+] Stopped timer")
-        toaster.show_toast("Timer Stopped!",
-                           "",
-                           duration=3)
-        self.basicTimer(time, 1.0)
-
-    def basicTimer(self, loltime: float, interval: float) -> bool:
-        print('HERE')
-        while loltime:
-            with self.printLock:
-                print(int(loltime))
-                loltime -= interval
-                time.sleep(interval)
-        toaster.show_toast("Timer is finished",
-                           "you are a terrible person",
-                           duration=3)
-        return True
+    def log(self, info: str):
+        self.logInfo.AppendText(info)
 
 
-# DEV
-basic = Pymodoro(10, 10, lambda: int(input("Put in state: ")))
-basic.pomodoroSwitch(int(input('Start: 0, Rest: 1, Stop: 2 ')))
+class GUI(wx.Frame):
+    """ Basic GUI to run different pomodoro settings
+
+    """
+    def __init__(self, parent, title):
+        super(GUI, self).__init__(parent, title=title,
+                                  size=(350, 250))
+        self.logClass = None
+
+        self.Center()
+        self.InitUI()
+
+    def InitUI(self):
+        """Init's UI for GUI Class"""
+
+        # Layout config
+        self.mainPanel = wx.Panel(self)
+        self.mainPanel.SetBackgroundColour("#d8bfd8")
+        self.mainBox = wx.BoxSizer(wx.VERTICAL)
+        self.customBox = wx.BoxSizer(wx.VERTICAL)
+
+        # Menubar Config
+        menubar = wx.MenuBar()
+        logMenu = wx.Menu()
+        logItem = logMenu.Append(wx.ID_ANY, "Show Log",
+                                 "Show's the Logging Window")
+        menubar.Append(logMenu, "&Log")
+
+        self.Bind(wx.EVT_MENU, lambda EVT: self.initLog(), logItem)
+
+        # Work But
+        workButton = wx.Button(self.mainPanel,
+                               label="Work", size=(100, 30))
+        workButton.Bind(wx.EVT_BUTTON, lambda EVT: self.work())
+
+        # Rest But
+        restButton = wx.Button(self.mainPanel,
+                               label="Rest", size=(100, 30))
+        restButton.Bind(wx.EVT_BUTTON, lambda EVT: self.rest())
+
+        # Log Spawn; Will put these into menubar soon
+        logBut = wx.Button(self.mainPanel,
+                           label="Log", size=(100, 30))
+        logBut.Bind(wx.EVT_BUTTON, lambda EVT: self.initLog())
+
+        customBut = wx.Button(self.mainPanel,
+                              label="Custom Timer", size=(100, 30))
+        customBut.Bind(wx.EVT_BUTTON, lambda EVT: self.customTimer())
+
+        self.customText = wx.TextCtrl(self.mainPanel, size=(100, 30))
+
+        # Add buttons to sizers
+        self.mainBox.Add(workButton, wx.EXPAND | wx.ALL)
+        self.mainBox.Add(restButton, wx.EXPAND | wx.ALL)
+        self.mainBox.Add(logBut, wx.EXPAND | wx.ALL)
+        # self.mainBox.Add(logTest, wx.EXPAND | wx.ALL)
+
+        self.customBox.Add(customBut, wx.EXPAND | wx.ALL)
+        self.customBox.Add(self.customText, wx.EXPAND | wx.ALL)
+
+        self.mainBox.Add(self.customBox)
+
+        self.mainPanel.SetSizer(self.mainBox)
+        self.SetMenuBar(menubar)
+
+    def initLog(self):
+        """Will initialize the info dialog."""
+        if self.logClass:
+            self.logClass.Show()
+        else:
+            self.logClass = LogWindow(self, "Log Window")
+            self.logClass.Show()
+
+    def customTimer(self):
+        """Custom Timer"""
+        num = self.customText.GetValue()
+        try:
+            num = int(self.customText.GetValue())
+        except BaseException as err:
+            if not num:
+                self.logClass.log("[-] TextCtrl is null\n")
+                raise(err)
+            wx.MessageBox("Please input a number", "Info",
+                          wx.OK | wx.ICON_INFORMATION)
+            raise(err)
+
+        timeThreader(sndtoMin(num), self.logClass)
+
+    def rest(self):
+        timeThreader(sndtoMin(0.5), self.logClass)
+
+    def work(self):
+        timeThreader(sndtoMin(1.5), self.logClass)
+
+    def selfLog(self, string: str) -> bool:
+        if self.logClass:
+            self.logClass.logInfo.AppendText(string)
+            return True
+        else:
+            return False
+
+
+def sndtoMin(seconds: int) -> int:
+    return seconds * 60
+
+
+# Does not display time proportional to base 60
+def baseTimer(counter: int, logClass=None) -> bool:
+    """Basic Timer Seperate of GUI."""
+    toast = ToastNotifier()
+    i = None
+    i = counter
+    toast.show_toast("Basic Timer",
+                     "{} minute timer".format(str(counter / 60)),
+                     duration=4,
+                     threaded=True)
+
+    if logClass:
+        while i:
+            logClass.log("[+] Countdown: {}\n".format(i))
+            time.sleep(1)
+            i -= 1
+        logClass.log("[+] Countdown finished\n")
+
+    elif not logClass:
+        while i:
+            print("[+] Countdown: {}\n".format(i))
+            time.sleep(1)
+            i -= 1
+            print("Countdown finished")
+
+    toast.show_toast("Basic Timer",
+                     "Timer has ended!",
+                     duration=4,
+                     threaded=True)
+
+    return True
+
+
+def timeThreader(counter: int, logClass=None) -> bool:
+    """Calls baseTimer with specified time."""
+    t = threading.Thread(target=baseTimer,
+                         args=(counter, logClass,), daemon=True)
+    try:
+        t.start()
+    except BaseException as err:
+        raise(err)
+
+
+app = wx.App()
+ex = GUI(None, title="AHAHA")
+ex.Show()
+app.MainLoop()
