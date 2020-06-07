@@ -1,1 +1,8 @@
-* pymodoro
+* Pymodoro
+  * Little timer app that follows the pomodoro technique
+  * Uses wxPython and ToastNotifier to create GUI
+  * Helped me understand threading and practice with wxPython
+* Requirements
+  * wxPython
+  * [[https://github.com/jithurjacob/Windows-10-Toast-Notifications][Toast Notifier]]
+  * win10
