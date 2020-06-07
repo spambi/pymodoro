@@ -19,8 +19,8 @@ class LogWindow(wx.Dialog):
 
         self.logInfo = wx.TextCtrl(panel,
                                    style=wx.TE_READONLY |
-                                   wx.HSCROLL |
-                                   wx.TE_MULTILINE)
+                                   wx.TE_MULTILINE |
+                                   wx.HSCROLL)
 
         hbox.Add(self.logInfo, proportion=1, flag=wx.EXPAND)
 
@@ -48,32 +48,40 @@ class GUI(wx.Frame):
         # Layout config
         self.mainPanel = wx.Panel(self)
         self.mainPanel.SetBackgroundColour("#d8bfd8")
-        self.mainBox = wx.BoxSizer(wx.HORIZONTAL)
+        self.mainBox = wx.BoxSizer(wx.VERTICAL)
+        self.customBox = wx.BoxSizer(wx.VERTICAL)
 
         # Work But
         workButton = wx.Button(self.mainPanel,
-                               label="Work", size=(70, 30))
+                               label="Work", size=(100, 30))
         workButton.Bind(wx.EVT_BUTTON, lambda EVT: self.work())
 
         # Rest But
         restButton = wx.Button(self.mainPanel,
-                               label="Rest", size=(70, 30))
+                               label="Rest", size=(100, 30))
         restButton.Bind(wx.EVT_BUTTON, lambda EVT: self.rest())
 
-        # Log Spawn
+        # Log Spawn; Will put these into menubar soon
         logBut = wx.Button(self.mainPanel,
-                           label="Log", size=(70, 30))
+                           label="Log", size=(100, 30))
         logBut.Bind(wx.EVT_BUTTON, lambda EVT: self.initLog())
 
-        logTest = wx.Button(self.mainPanel,
-                            label="Log Test!", size=(70, 30))
-        logTest.Bind(wx.EVT_BUTTON,
-                     lambda EVT: self.logClass.log("This is a test!"))
+        customBut = wx.Button(self.mainPanel,
+                              label="Custom Timer", size=(100, 30))
+        customBut.Bind(wx.EVT_BUTTON, lambda EVT: self.customTimer())
 
-        self.mainBox.Add(workButton)
-        self.mainBox.Add(restButton)
-        self.mainBox.Add(logBut)
-        self.mainBox.Add(logTest)
+        self.customText = wx.TextCtrl(self.mainPanel, size=(100, 30))
+
+        # Add buttons to sizers
+        self.mainBox.Add(workButton, wx.EXPAND | wx.ALL)
+        self.mainBox.Add(restButton, wx.EXPAND | wx.ALL)
+        self.mainBox.Add(logBut, wx.EXPAND | wx.ALL)
+        # self.mainBox.Add(logTest, wx.EXPAND | wx.ALL)
+
+        self.customBox.Add(customBut, wx.EXPAND | wx.ALL)
+        self.customBox.Add(self.customText, wx.EXPAND | wx.ALL)
+
+        self.mainBox.Add(self.customBox)
 
         self.mainPanel.SetSizer(self.mainBox)
 
@@ -83,16 +91,28 @@ class GUI(wx.Frame):
             self.logClass.Show()
         else:
             self.logClass = LogWindow(self, "Log Window")
+            self.logClass.Show()
 
-    def initCustom(self):
-        """Will initialize the custom menu."""
-        pass
+    def customTimer(self):
+        """Custom Timer"""
+        num = self.customText.GetValue()
+        try:
+            num = int(self.customText.GetValue())
+        except BaseException as err:
+            if not num:
+                self.logClass.log("[-] TextCtrl is null\n")
+                raise(err)
+            wx.MessageBox("Please input a number", "Info",
+                          wx.OK | wx.ICON_INFORMATION)
+            raise(err)
+
+        timeThreader(sndtoMin(num), self.logClass)
 
     def rest(self):
-        timeThreader(5, self.logClass)
+        timeThreader(sndtoMin(0.5), self.logClass)
 
     def work(self):
-        timeThreader(15, self.logClass)
+        timeThreader(sndtoMin(1.5), self.logClass)
 
     def selfLog(self, string: str) -> bool:
         if self.logClass:
@@ -102,13 +122,18 @@ class GUI(wx.Frame):
             return False
 
 
+def sndtoMin(seconds: int) -> int:
+    return seconds * 60
+
+
+# Does not display time proportional to base 60
 def baseTimer(counter: int, logClass=None) -> bool:
     """Basic Timer Seperate of GUI."""
     toast = ToastNotifier()
     i = None
     i = counter
     toast.show_toast("Basic Timer",
-                     "{} second timer".format(str(counter)),
+                     "{} minute timer".format(str(counter / 60)),
                      duration=4,
                      threaded=True)
 
@@ -118,9 +143,10 @@ def baseTimer(counter: int, logClass=None) -> bool:
             time.sleep(1)
             i -= 1
         logClass.log("[+] Countdown finished\n")
+
     elif not logClass:
         while i:
-            print("Countdown: {}".format(i))
+            print("[+] Countdown: {}\n".format(i))
             time.sleep(1)
             i -= 1
             print("Countdown finished")
